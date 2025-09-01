@@ -2,7 +2,7 @@
 //  TodoListAssembly.swift
 //  ViperExample
 //
-//  Created by Валентин on 01.08.2025.
+//  Created by Валентин on 01.09.2025.
 //
 
 import UIKit
@@ -21,6 +21,7 @@ class TodoListAssembly {
         
         interactor.output = presenter
         view.output = presenter
+        presenter.output = view
         router.rootViewController = view
 
         let navigationController = UINavigationController(rootViewController: view)
