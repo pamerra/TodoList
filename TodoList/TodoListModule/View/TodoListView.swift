@@ -15,6 +15,9 @@ protocol TodoListViewOutput: AnyObject {
     func viewDidLoad()
     func searchTextChanged(_ text: String)
     func todoToggled(id: Int)
+    func editTodo(_ todo: TodoItemViewModel)
+    func shareTodo(_ todo: TodoItemViewModel)
+    func deleteTodo(_ id: Int)
 }
 
 final class TodoListView: UIViewController, TodoListViewInput {
@@ -125,11 +128,56 @@ extension TodoListView: UISearchBarDelegate {
 }
 
 extension TodoListView: TodoTableViewCellDelegate {
+
     func todoCellDidToggle(_ cell: TodoTableViewCell) {
         guard let indexPath = tableView.indexPath(for: cell) else { return }
         let todo = todos[indexPath.row]
         output?.todoToggled(id: todo.id)
     }
+    
+    func todoCellDidTap(_ cell: TodoTableViewCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let todo = todos[indexPath.row]
+        showContextMenu(for: todo, at: indexPath)
+    }
+    
+    func showContextMenu(for todo: TodoItemViewModel, at indexPath: IndexPath) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        // Добавляем действия
+        let editAction = UIAlertAction(title: "Редактировать", style: .default) { _ in
+            self.output?.editTodo(todo)
+        }
+        editAction.setValue(UIImage(systemName: "pencil"), forKey: "image")
+        
+        let shareAction = UIAlertAction(title: "Поделиться", style: .default) { _ in
+            self.output?.shareTodo(todo)
+        }
+        shareAction.setValue(UIImage(systemName: "square.and.arrow.up"), forKey: "image")
+        
+        let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { _ in
+            self.output?.deleteTodo(todo.id)
+        }
+        deleteAction.setValue(UIImage(systemName: "trash"), forKey: "image")
+        
+        alert.addAction(editAction)
+        alert.addAction(shareAction)
+        alert.addAction(deleteAction)
+        
+        // Добавляем действие отмены
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        
+        // Настраиваем popover для iPad
+        if let popover = alert.popoverPresentationController {
+            let cell = tableView.cellForRow(at: indexPath)
+            popover.sourceView = cell
+            popover.sourceRect = cell?.bounds ?? CGRect.zero
+            popover.permittedArrowDirections = [.up, .down]
+        }
+        
+       present(alert, animated: true)
+    }
+
 }
 
 // MARK: TodoListPresenterOutput

@@ -9,6 +9,7 @@ import UIKit
 
 protocol TodoTableViewCellDelegate: AnyObject {
     func todoCellDidToggle(_ cell: TodoTableViewCell)
+    func todoCellDidTap(_ cell: TodoTableViewCell)
 }
 
 class TodoTableViewCell: UITableViewCell {
@@ -105,6 +106,8 @@ class TodoTableViewCell: UITableViewCell {
             dateLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
             
         ])
+        
+        setupTapGesture()
     }
     
     func configure(with todo: TodoItemViewModel) {
@@ -164,6 +167,15 @@ class TodoTableViewCell: UITableViewCell {
         checkmarkButton.backgroundColor = .clear
         checkmarkButton.setImage(nil, for: .normal)
         delegate = nil
+    }
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        containerView.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func handleTap() {
+        delegate?.todoCellDidTap(self)
     }
     
     @objc private func checkmarkTapped() {
