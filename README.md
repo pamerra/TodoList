@@ -39,7 +39,7 @@
 
 ### 📁 Структура проекта
 ```
-TZEffective2025.08.01/
+TodoList/
 ├── TodoListModule/          # Модуль списка задач
 │   ├── Entity/             # Модели данных
 │   ├── Interactor/         # Бизнес-логика
@@ -52,7 +52,8 @@ TZEffective2025.08.01/
 │   ├── Router/
 │   └── View/
 ├── Services/               # Сервисы
-│   ├── TodoCoreDataService.swift
+│   ├── CoreDataService.swift
+│   ├── NetworkService.swift
 │   └── UserDefaultsService.swift
 └── ContextMenu.swift       # Контекстное меню
 ```
@@ -99,7 +100,7 @@ TZEffective2025.08.01/
 ## 🎨 Дизайн и UX
 
 ### Главный экран && 📱 Скриншоты
-<img src="https://github.com/latronixo/TZEffective2025.08.01/blob/Develop/TZEffective2025.08.01/Screenshots/TodoListView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/TodoListView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Поисковая строка**: С иконкой лупы и микрофона
 
@@ -108,7 +109,7 @@ TZEffective2025.08.01/
 - **Нижняя панель**: Количество задач и кнопка добавления задачи
 
 ### Контекстное меню
-<img src="https://github.com/latronixo/TZEffective2025.08.01/blob/Develop/TZEffective2025.08.01/Screenshots/ContextMenu.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/ContextMenu.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Позиционирование**: Всплывающее меню в месте выбранной задачи
 
@@ -117,7 +118,7 @@ TZEffective2025.08.01/
 - **Дизайн**: Полупрозрачный фон с размытием
 
 ### Экран создания && редактирования 
-<img src="https://github.com/latronixo/TZEffective2025.08.01/blob/Develop/TZEffective2025.08.01/Screenshots/DetailTodoView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/DetailTodoView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Навигация**: Кнопка "Назад" с функционалом сохранения
 
@@ -130,16 +131,16 @@ TZEffective2025.08.01/
 1. **Клонирование репозитория**
    ```bash
    git clone [URL репозитория]
-   cd TZEffective2025.08.01
+   cd TodoList
    ```
 
 2. **Открытие проекта**
-   - Откройте `TZEffective2025.08.01.xcodeproj` в Xcode 15
+   - Откройте `TodoList.xcodeproj` в Xcode 15
    - Выберите симулятор iPhone
    - Нажмите `Cmd+R` для запуска
 
 3. **Запуск тестов**
-   - Выберите схему `TZEffective2025.08.01Tests`
+   - Выберите схему `TodoListTests`
    - Нажмите `Cmd+U` для запуска всех тестов
 
 ## 🧪 Тестирование
@@ -150,7 +151,6 @@ TZEffective2025.08.01/
 - **Сервисы**: Тестирование `CoreDataService` и сетевых запросов
 - **Интеракторы**: Тестирование бизнес-логики
 - **Презентеры**: Тестирование презентационной логики
-- **UI компоненты**: Тестирование пользовательского интерфейса
 
 ## 📊 Покрытие тестами
 
@@ -158,7 +158,6 @@ TZEffective2025.08.01/
 - **Сервисы**: 90%
 - **Интеракторы**: 85%
 - **Презентеры**: 80%
-- **UI компоненты**: 75%
 
 ## 🔧 Технологии
 
