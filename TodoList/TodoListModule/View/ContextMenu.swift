@@ -1,5 +1,5 @@
 //
-//  ContextMenuViewController.swift
+//  ContextMenu.swift
 //  TodoList
 //
 //  Created by Валентин on 01.09.2025.
@@ -7,26 +7,22 @@
 
 import UIKit
 
-protocol ContextMenuViewControllerDelegate: AnyObject {
+protocol ContextMenuDelegate: AnyObject {
     func contextMenuDidSelectEdit()
     func contextMenuDidSelectShare()
     func contextMenuDidSelectDelete()
 }
 
-class ContextMenuViewController: UIViewController {
+final class ContextMenu: UIViewController {
     
-    weak var delegate: ContextMenuViewControllerDelegate?
+    weak var delegate: ContextMenuDelegate?
+    private var todo: TodoItemViewModel?
     
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = #colorLiteral(red: 0.7490196824, green: 0.7490196824, blue: 0.7490196824, alpha: 1)
-        view.layer.cornerRadius = 12
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowRadius = 8
-        view.layer.shadowOpacity = 0.3
-        return view
-    }()
+    // Основной контейнер для всего меню
+     private let containerView: UIView = {
+         let view = UIView()
+         return view
+     }()
     
     private let stackView: UIStackView = {
         let stack = UIStackView()
@@ -35,24 +31,105 @@ class ContextMenuViewController: UIViewController {
         return stack
     }()
     
+    // Вьюха для отображения задачи
+    private let todoInfoView = createTodoInfoView()
+        
     private let editView = createMenuView(title: "Редактировать", iconName: "edit")
     private let shareView = createMenuView(title: "Поделиться", iconName: "share")
     private let deleteView = createMenuView(title: "Удалить", iconName: "trash", isDestructive: true)
     
     private let separator1 = createSeparator()
     private let separator2 = createSeparator()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         setupActions()
     }
     
-    private func setupViews() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+    func configure(with todo: TodoItemViewModel) {
+        self.todo = todo
+        configureTodoInfoView()
+    }
+    
+    private static func createTodoInfoView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0)
+        view.layer.cornerRadius = 8
         
+        let titleLabel = UILabel()
+        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+        titleLabel.textColor = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
+        titleLabel.numberOfLines = 1
+        
+        let descriptionLabel = UILabel()
+        descriptionLabel.font = UIFont.systemFont(ofSize: 14)
+        descriptionLabel.textColor = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
+        descriptionLabel.numberOfLines = 0
+        
+        let dateLabel = UILabel()
+        dateLabel.font = UIFont.systemFont(ofSize: 14)
+        dateLabel.textColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
+        
+        view.addSubview(titleLabel)
+        view.addSubview(descriptionLabel)
+        view.addSubview(dateLabel)
+        
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+                
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            descriptionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            dateLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 8),
+            dateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            dateLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
+        ])
+        
+        //сохраняем ссылки на labels для последующего обновления
+        view.tag = 100
+        titleLabel.tag = 101
+        descriptionLabel.tag = 102
+        dateLabel.tag = 103
+        
+        return view
+    }
+    
+    private func configureTodoInfoView() {
+        guard let titleLabel = todoInfoView.viewWithTag(101) as? UILabel,
+              let descriptionLabel = todoInfoView.viewWithTag(102) as? UILabel,
+              let dateLabel = todoInfoView.viewWithTag(103) as? UILabel,
+              let todo = todo else { return }
+        
+        titleLabel.text = todo.title
+        descriptionLabel.text = todo.describe
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        dateLabel.text = formatter.string(from: todo.createdAt)
+    }
+    
+    private func setupViews() {
+        //создаем размытость
+        let blurEffect = UIBlurEffect(style: .dark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = view.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        view.addSubview(blurView)
         view.addSubview(containerView)
+        containerView.addSubview(todoInfoView)
         containerView.addSubview(stackView)
+        
+        stackView.layer.cornerRadius = 8
+        stackView.backgroundColor = UIColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1.0)
         
         stackView.addArrangedSubview(editView)
         stackView.addArrangedSubview(separator1)
@@ -61,11 +138,20 @@ class ContextMenuViewController: UIViewController {
         stackView.addArrangedSubview(deleteView)
         
         containerView.translatesAutoresizingMaskIntoConstraints = false
+        todoInfoView.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
+        separator1.translatesAutoresizingMaskIntoConstraints = false
+        separator2.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            todoInfoView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            todoInfoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            todoInfoView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            todoInfoView.heightAnchor.constraint(lessThanOrEqualToConstant: 100),
+            
+            stackView.topAnchor.constraint(equalTo: todoInfoView.bottomAnchor, constant: 16),
+            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 36),
             stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
             
@@ -90,7 +176,6 @@ class ContextMenuViewController: UIViewController {
     
     private static func createMenuView(title: String, iconName: String, isDestructive: Bool = false) -> UIView {
         let buttonView = UIView()
-        buttonView.backgroundColor = .clear
         
         let titleLabel = UILabel()
         titleLabel.text = title
@@ -169,35 +254,32 @@ class ContextMenuViewController: UIViewController {
         modalTransitionStyle = .crossDissolve
         
         viewController.present(self, animated: false) {
-            // Вычисляем позицию меню после показа
+            // Позиционируем меню рядом с ячейкой
             let sourceFrame = sourceView.convert(sourceView.bounds, to: self.view)
-            
-            // Вычисляем позицию меню
-            let menuWidth: CGFloat = 300
-            let menuHeight: CGFloat = 150 // Примерная высота для 3 кнопок
-            
-            var xPosition = sourceFrame.midX - menuWidth / 2
-            var yPosition = sourceFrame.maxY + 8 // 8 пунктов отступ от ячейки
-            
-            // Проверяем, не выходит ли меню за границы экрана
             let screenBounds = UIScreen.main.bounds
             
-            // Если меню выходит за правый край экрана
-            if xPosition + menuWidth > screenBounds.width - 16 {
-                xPosition = screenBounds.width - menuWidth - 16
+            //Фиксированная позиция и ширина
+            let xPosition: CGFloat = 25
+            var yPosition = sourceFrame.minY
+            let menuWidth: CGFloat = sourceFrame.width - 50
+
+            //Вычисляем высоту на основе содержимого
+            var menuHeight: CGFloat = 300
+            
+            //если description многострочный, увеличиваем высоту
+            if let todo = self.todo {
+                let descriptionLines = Int(todo.describe.count / 40)
+                if descriptionLines > 1 {
+                    let additionalHeight = CGFloat(descriptionLines - 1) * 20 // 20 пунктов на дополнительную строку
+                    menuHeight += additionalHeight
+                }
             }
             
-            // Если меню выходит за левый край экрана
-            if xPosition < 16 {
-                xPosition = 16
-            }
-            
-            // Если меню выходит за нижний край экрана, показываем его выше ячейки
+            //Проверяем, не выходит ли меню за нижний край экрана
             if yPosition + menuHeight > screenBounds.height - 16 {
-                yPosition = sourceFrame.minY - menuHeight - 8
+                yPosition = screenBounds.height - menuHeight - 16
             }
             
-            // Устанавливаем позицию через frame
             self.containerView.frame = CGRect(x: xPosition, y: yPosition, width: menuWidth, height: menuHeight)
             
             // Анимация появления

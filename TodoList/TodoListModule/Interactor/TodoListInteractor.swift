@@ -9,11 +9,11 @@ import Foundation
 import CoreData
 
 protocol TodoListInteractorInput {
-    var output: TodoListInteractorOutput? { get set }
     func loadTodos()
     func searchTodos(with query: String)
     func toggleTodoCompletion(id: Int)
     func deleteTodo(_ id: Int)
+    func updateTodo(id: Int, title: String, description: String)
 }
 
 protocol TodoListInteractorOutput: AnyObject {
@@ -26,56 +26,60 @@ protocol TodoListInteractorOutput: AnyObject {
 final class TodoListInteractor: TodoListInteractorInput {
     weak var output: TodoListInteractorOutput?
     
-    private let networkService: TodoNetworkServiceProtocol
-    private let coreDataService: TodoCoreDataServiceProtocol
+    private let networkService: NetworkServiceProtocol
+    private let coreDataService: CoreDataServiceProtocol
+    private let userDefaultsService: UserDefaultsServiceProtocol
     private var allTodos: [TodoItemViewModel] = []
     
-    init(networkService: TodoNetworkServiceProtocol, coreDataService: TodoCoreDataServiceProtocol) {
+    init(networkService: NetworkServiceProtocol, coreDataService: CoreDataServiceProtocol, userDefaultsService: UserDefaultsServiceProtocol) {
         self.networkService = networkService
         self.coreDataService = coreDataService
+        self.userDefaultsService = userDefaultsService
     }
     
     func loadTodos() {
-        if coreDataService.isFirstLaunch() {
-            loadTodosFromAPI()
-        } else {
+        if userDefaultsService.isNotFirstLaunch() {
             loadTodosFromCoreData()
+        } else {
+            loadTodosFromAPI()
         }
     }
     
     private func loadTodosFromAPI() {
         networkService.fetchTodos { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    let todoViewModels = response.todos.map { TodoItemViewModel(from: $0) }
-                    self?.allTodos = todoViewModels
-                    self?.coreDataService.saveTodos(response.todos)
-                    self?.coreDataService.markAsFirstLaunch()
-                    self?.output?.didLoadTodos(todoViewModels)
-                case .failure(let error):
-                    self?.output?.didReceiveError(error.localizedDescription)
-                }
+            switch result {
+            case .success(let response):
+                let todoViewModels = response.todos.map { TodoItemViewModel(from: $0) }
+                self?.allTodos = todoViewModels
+                self?.coreDataService.saveTodos(response.todos)
+                self?.userDefaultsService.markAsNotFirstLaunch()
+                self?.output?.didLoadTodos(todoViewModels)
+            case .failure(let error):
+                self?.output?.didReceiveError(error.localizedDescription)
             }
         }
     }
     
     private func loadTodosFromCoreData() {
-        let coreDataItems = coreDataService.fetchTodos()
-        let todoViewModels = coreDataItems.map { TodoItemViewModel(from: $0) }
-        self.allTodos = todoViewModels
-        self.output?.didLoadTodos(todoViewModels)
+        coreDataService.fetchTodos { [weak self] coreDataItems in
+            let todoViewModels = coreDataItems.map { TodoItemViewModel(from: $0) }
+            self?.allTodos = todoViewModels
+            self?.output?.didLoadTodos(todoViewModels)
+        }
     }
     
     func searchTodos(with query: String) {
-        if query.isEmpty {
-            output?.didUpdateTodos(allTodos)
-        } else {
-            let filteredTodos = allTodos.filter { todo in
-                todo.title.localizedCaseInsensitiveContains(query) ||
-                todo.describe.localizedCaseInsensitiveContains(query)
+        DispatchQueue(label: "com.todo.coredata.queue", qos: .background).async { [weak self] in
+            guard let allTodos = self?.allTodos else { return }
+            if query.isEmpty {
+                self?.output?.didUpdateTodos(allTodos)
+            } else {
+                let filteredTodos = allTodos.filter { todo in
+                    todo.title.localizedCaseInsensitiveContains(query) ||
+                    todo.describe.localizedCaseInsensitiveContains(query)
+                }
+                self?.output?.didUpdateTodos(filteredTodos)
             }
-            output?.didUpdateTodos(filteredTodos)
         }
     }
     
@@ -91,9 +95,9 @@ final class TodoListInteractor: TodoListInteractorInput {
                 createdAt: allTodos[index].createdAt,
                 userId: allTodos[index].userId
             )
-            
+                    
             coreDataService.updateTodoCompletion(id: id, isCompleted: newCompletedState)
-            
+                    
             output?.didUpdateTodos(allTodos)
         }
     }
@@ -103,6 +107,22 @@ final class TodoListInteractor: TodoListInteractorInput {
             coreDataService.deleteTodo(id)
             allTodos.remove(at: index)
             output?.didDeleteTodo(allTodos)
+        }
+    }
+ 
+    //метод перезагрузки только что отредактированной задачи в tableView
+    func updateTodo(id: Int, title: String, description: String) {
+        if let index = allTodos.firstIndex(where: { $0.id == id }) {
+            allTodos[index] = TodoItemViewModel(
+                id: allTodos[index].id,
+                title: title,
+                describe: description,
+                isCompleted: allTodos[index].isCompleted,
+                createdAt: allTodos[index].createdAt,
+                userId: allTodos[index].userId
+            )
+
+            output?.didUpdateTodos(allTodos)
         }
     }
 

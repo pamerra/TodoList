@@ -8,29 +8,23 @@
 import Foundation
 
 protocol DetailTodoPresenterInput {
-    var output: DetailTodoPresenterOutput { get set }
     func viewDidLoad()
-    func saveButtonTapped()
     func backButtonTapped()
 }
 
-protocol DetailTodoPresenterOutput: AnyObject {
-    func displayTodo(_ todo: TodoItemViewModel)
-    func showError(_ message: String)
-    func closeView()
-}
-
 final class DetailTodoPresenter {
-    weak var output: DetailTodoPresenterOutput?
     
     private let interactor: DetailTodoInteractorInput
     private let view: DetailTodoViewInput
     private let router: DetailTodoRouterInput
     
-    init(interactor: DetailTodoInteractorInput, view: DetailTodoViewInput, router: DetailTodoRouterInput) {
+    private weak var listener: TodoUpdateListener?
+    
+    init(interactor: DetailTodoInteractorInput, view: DetailTodoViewInput, router: DetailTodoRouterInput, todoListener: TodoUpdateListener?) {
         self.interactor = interactor
         self.view = view
         self.router = router
+        self.listener = todoListener
     }
 }
 
@@ -39,33 +33,33 @@ extension DetailTodoPresenter: DetailTodoViewOutput {
         interactor.loadTodo()
     }
     
-    func saveButtonTapped() {
-        guard let detailView = view as? DetailTodoView else { return }
-        let editedData = detailView.getEditedData()
-        
-        if editedData.title.isEmpty {
-            output?.showError("Название задачи не может быть пустым")
+    func backButtonTapped(title: String, description: String) {
+        if title.isEmpty && !description.isEmpty {
+            view.showError("Название задачи не может быть пустым")
             return
         }
         
-        interactor.saveTodo(title: editedData.title, description: editedData.description)
-    }
+        if title.isEmpty && description.isEmpty {
+            view.closeView()
+            return
+        }
     
-    func backButtonTapped() {
-        output?.closeView()
+        interactor.saveTodo(title: title, description: description)
     }
 }
 
 extension DetailTodoPresenter: DetailTodoInteractorOutput {
     func didLoadTodo(_ todo: TodoItemViewModel) {
-        output?.displayTodo(todo)
+        view.displayTodo(todo)
     }
     
-    func didSaveTodo() {
-        output?.closeView()
+    func didSaveTodo(id: Int, title: String, description: String, isNew: Bool) {
+        //пробрасываем для обновления задачи в основном списке
+        listener?.update(model: TodoUpdateModel(id: id, title: title, description: description, isNew: isNew))
+        view.closeView()
     }
     
     func didReceiveError(_ error: String) {
-        output?.showError(error)
+        view.showError(error)
     }
 }

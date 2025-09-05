@@ -7,19 +7,19 @@
 
 import UIKit
 
-class DetailTodoAssembly {
-    static func assembleDetailTodoModule(todo: TodoItemViewModel, coreDataService: TodoCoreDataServiceProtocol) -> UIViewController {
+final class DetailTodoAssembly {
+    static func assembleDetailTodoModule(todo: TodoItemViewModel?, coreDataService: CoreDataServiceProtocol, todoListener: TodoUpdateListener?) -> UIViewController {
         let view = DetailTodoView()
         let interactor = DetailTodoInteractor(todo: todo, coreDataService: coreDataService)
         let router = DetailTodoRouter()
         
-        let presenter = DetailTodoPresenter(interactor: interactor, view: view, router: router)
+        let presenter = DetailTodoPresenter(interactor: interactor, view: view, router: router, todoListener: todoListener)
         
-        interactor.output = presenter
         view.output = presenter
+        interactor.output = presenter
         router.viewController = view
         
         let navigationController = UINavigationController(rootViewController: view)
-        return navigationController        
+        return navigationController
     }
 }

@@ -1,31 +1,36 @@
 //
 //  DetailTodoView.swift
-//  TZEffective2025.08.01
+//  TodoList
 //
-//  Created by Валентин on 03.08.2025.
+//  Created by Валентин on 05.09.2025.
 //
 
 import UIKit
 
+protocol TodoUpdateListener: AnyObject {
+    func update(model: TodoUpdateModel)
+}
+
 protocol DetailTodoViewInput {
-    var output: DetailTodoViewOutput? { get set }
+    func displayTodo(_ todo: TodoItemViewModel)
+    func showError(_ message: String)
+    func closeView()
 }
 
 protocol DetailTodoViewOutput {
     func viewDidLoad()
-    func saveButtonTapped()
-    func backButtonTapped()
+    func backButtonTapped(title: String, description: String)
 }
 
-final class DetailTodoView: UIViewController, DetailTodoViewInput {
+final class DetailTodoView: UIViewController {
     var output: DetailTodoViewOutput?
     
     private let titleTextField = UITextField()
     private let dateLabel = UILabel()
     private let descriptionTextView = UITextView()
     
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+    init() {
+        super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
@@ -41,18 +46,15 @@ final class DetailTodoView: UIViewController, DetailTodoViewInput {
     
     private func setupNavigationBar() {
         title = ""
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
+        let backButton = UIBarButtonItem(
             title: "Назад",
             style: .plain,
             target: self,
             action: #selector(backButtonTapped)
         )
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Сохранить",
-            style: .plain,
-            target: self,
-            action: #selector(saveButtonTapped)
-        )
+        backButton.tintColor = UIColor(red: 0.9941777587, green: 0.8433876634, blue: 0.01378514804, alpha: 1.0)
+                
+        navigationItem.leftBarButtonItem = backButton
     }
     
     private func setupViews() {
@@ -75,8 +77,8 @@ final class DetailTodoView: UIViewController, DetailTodoViewInput {
         descriptionTextView.layer.cornerRadius = 8
         
         view.addSubview(titleTextField)
-        view.addSubview(descriptionTextView)
         view.addSubview(dateLabel)
+        view.addSubview(descriptionTextView)
         
         titleTextField.translatesAutoresizingMaskIntoConstraints = false
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -104,7 +106,7 @@ final class DetailTodoView: UIViewController, DetailTodoViewInput {
     func configure(with todo: TodoItemViewModel) {
         titleTextField.text = todo.title
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd/mm/yyyy"
+        formatter.dateFormat = "dd/MM/yyyy"
         
         dateLabel.text = formatter.string(from: todo.createdAt)
         descriptionTextView.text = todo.describe
@@ -115,26 +117,29 @@ final class DetailTodoView: UIViewController, DetailTodoViewInput {
     }
     
     @objc private func backButtonTapped() {
-        output?.backButtonTapped()
+        output?.backButtonTapped(title: titleTextField.text ?? "", description: descriptionTextView.text ?? "")
     }
-    
-    @objc private func saveButtonTapped() {
-        output?.saveButtonTapped()
-    }
-}
+ }
 
-extension DetailTodoView: DetailTodoPresenterOutput {
+extension DetailTodoView: DetailTodoViewInput {
     func displayTodo(_ todo: TodoItemViewModel) {
-        configure(with: todo)
+        DispatchQueue.main.async { [weak self] in
+            self?.configure(with: todo)
+        }
     }
     
     func showError(_ message: String) {
-        let alert = UIAlertController(title: "Ошибка", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Ошибка", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
     
     func closeView() {
-        dismiss(animated: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.dismiss(animated: true)
+        }
     }
 }
+

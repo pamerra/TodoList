@@ -8,22 +8,13 @@
 import Foundation
 
 protocol TodoListPresenterInput {
-    var output: TodoListPresenterOutput? { get set }
     func viewDidLoad()
     func searchTextChanged(_ text: String)
     func todoToggled(id: Int)
-}
-
-protocol TodoListPresenterOutput: AnyObject {
-    func displayTodos(_ todos: [TodoItemViewModel])
-    func displayError(_ message: String)
-    func showLoading()
-    func hideLoading()
+    func updateTodoAfterEdit(id: Int, title: String, description: String)
 }
 
 final class TodoListPresenter {
-    weak var output: TodoListPresenterOutput?
-    
     private let interactor: TodoListInteractorInput
     private let router: TodoListRouterInput
     private let view: TodoListViewInput
@@ -32,14 +23,42 @@ final class TodoListPresenter {
         self.interactor = interactor
         self.router = router
         self.view = view
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(todoUpdated),
+            name: NSNotification.Name("TodoUpdated"),
+            object: nil
+        )
     }
     
+    @objc private func todoUpdated(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let id = userInfo["id"] as? Int,
+              let title = userInfo["title"] as? String,
+              let description = userInfo["description"] as? String else { return }
+        
+        if let isNew = userInfo["isNew"] as? Bool, isNew {
+            interactor.loadTodos()
+        } else {
+            updateTodoAfterEdit(id: id, title: title, description: description)
+        }
+    }
+}
+
+extension TodoListPresenter: TodoUpdateListener {
+    func update(model: TodoUpdateModel) {
+        if model.isNew {
+            interactor.loadTodos()
+        } else {
+            updateTodoAfterEdit(id: model.id, title: model.title, description: model.description)
+        }
+    }
 }
 
 extension TodoListPresenter: TodoListViewOutput {
-    
     func viewDidLoad() {
-        output?.showLoading()
+        view.showLoading()
         interactor.loadTodos()
     }
     
@@ -52,7 +71,8 @@ extension TodoListPresenter: TodoListViewOutput {
     }
     
     func editTodo(_ todo: TodoItemViewModel) {
-        router.openDetailScreen(with: todo)
+        router.openDetailScreen(with: todo, todoListener: self)
+        
     }
     
     func shareTodo(_ todo: TodoItemViewModel) {
@@ -62,25 +82,32 @@ extension TodoListPresenter: TodoListViewOutput {
     func deleteTodo(_ id: Int) {
         interactor.deleteTodo(id)
     }
+    
+    func updateTodoAfterEdit(id: Int, title: String, description: String) {
+        interactor.updateTodo(id: id, title: title, description: description)
+    }
+    
+    func addNewTodo() {
+        router.openAddNewTodoScreen(todoListener: self)
+    }
 }
 
 extension TodoListPresenter: TodoListInteractorOutput {
-    
     func didLoadTodos(_ todos: [TodoItemViewModel]) {
-        output?.hideLoading()
-        output?.displayTodos(todos)
+        view.hideLoading()
+        view.displayTodos(todos)
     }
     
     func didReceiveError(_ error: String) {
-        output?.hideLoading()
-        output?.displayError(error)
+        view.hideLoading()
+        view.displayError(error)
     }
     
     func didUpdateTodos(_ todos: [TodoItemViewModel]) {
-        output?.displayTodos(todos)
+        view.displayTodos(todos)
     }
     
     func didDeleteTodo(_ todos: [TodoItemViewModel]) {
-        output?.displayTodos(todos)
+        view.displayTodos(todos)
     }
 }

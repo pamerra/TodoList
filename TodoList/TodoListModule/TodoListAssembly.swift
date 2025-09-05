@@ -7,23 +7,28 @@
 
 import UIKit
 
-class TodoListAssembly {
+final class TodoListAssembly {
     static func assembleTodoListModule() -> UINavigationController {
         let view = TodoListView()
-        let networkService = TodoNetworkService()
-        let coreDataService = TodoCoreDataService()
-        let interactor = TodoListInteractor(networkService: networkService, coreDataService: coreDataService)
-        let router = TodoListRouter(coreDataService: coreDataService)
-
-        let presenter = TodoListPresenter(interactor: interactor,
-                                       router: router,
-                                       view: view)
+        let networkService = NetworkService()
+        let coreDataService = CoreDataService()
+        let userDefaultsService = UserDefaultsService()
         
-        interactor.output = presenter
+        let interactor = TodoListInteractor(
+            networkService: networkService,
+            coreDataService: coreDataService,
+            userDefaultsService: userDefaultsService
+        )
+        let router = TodoListRouter(coreDataService: coreDataService)
+        
+        let presenter = TodoListPresenter(interactor: interactor,
+                                        router: router,
+                                        view: view)
+        
         view.output = presenter
-        presenter.output = view
+        interactor.output = presenter
         router.rootViewController = view
-
+        
         let navigationController = UINavigationController(rootViewController: view)
         return navigationController
     }
