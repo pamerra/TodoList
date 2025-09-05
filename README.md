@@ -100,7 +100,7 @@ TodoList/
 ## 🎨 Дизайн и UX
 
 ### Главный экран && 📱 Скриншоты
-<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/TodoListView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/pamerra/TodoList/blob/main/TodoList/Screenshots/TodoListView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Поисковая строка**: С иконкой лупы и микрофона
 
@@ -109,7 +109,7 @@ TodoList/
 - **Нижняя панель**: Количество задач и кнопка добавления задачи
 
 ### Контекстное меню
-<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/ContextMenu.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/pamerra/TodoList/blob/main/TodoList/Screenshots/ContextMenu.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Позиционирование**: Всплывающее меню в месте выбранной задачи
 
@@ -118,7 +118,7 @@ TodoList/
 - **Дизайн**: Полупрозрачный фон с размытием
 
 ### Экран создания && редактирования 
-<img src="https://github.com/latronixo/TodoList/blob/Develop/TodoList/Screenshots/DetailTodoView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
+<img src="https://github.com/pamerra/TodoList/blob/main/TodoList/Screenshots/DetailTodoView.png" alt="Главный экран" width="33%" style="border: 3px solid #000; border-radius: 6px;">
 
 - **Навигация**: Кнопка "Назад" с функционалом сохранения
 
